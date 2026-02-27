@@ -136,11 +136,17 @@ def clear_today_records(user_id):
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         today = get_today_str()
+        print(f"[DEBUG] 清除记录 - user_id: {user_id}, today: {today}")
+        
         c.execute("DELETE FROM food_log WHERE date = ? AND user_id = ?", (today, str(user_id)))
+        deleted_count = c.rowcount
+        print(f"[DEBUG] 删除了 {deleted_count} 条记录")
+        
         conn.commit()
         conn.close()
         return True
-    except:
+    except Exception as e:
+        print(f"[DEBUG] 清除记录错误: {e}")
         return False
 
 init_db()
@@ -288,6 +294,26 @@ else:
     
     prog = min(t_cal / st.session_state.tdee, 1.0)
     st.progress(prog, text=f"今日已摄入 {int(t_cal)} / {st.session_state.tdee} Kcal")
+    
+    if not t_df.empty:
+        st.markdown("#### 📊 今日摄入明细")
+        st.dataframe(
+            t_df[['food', 'cal', 'prot', 'carb', 'fat']].style.format({
+                'cal': '{:.0f}',
+                'prot': '{:.0f}',
+                'carb': '{:.0f}',
+                'fat': '{:.0f}'
+            }),
+            column_config={
+                'food': '食物名称',
+                'cal': '热量',
+                'prot': '蛋白',
+                'carb': '碳水',
+                'fat': '脂肪'
+            },
+            hide_index=True,
+            use_container_width=True
+        )
     
     if st.button("🗑️ 清除今日记录", key="clear_today_main"):
         clear_today_records(current_uid)
